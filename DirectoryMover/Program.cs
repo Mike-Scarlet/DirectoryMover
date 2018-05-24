@@ -15,10 +15,12 @@ namespace DirectoryMover
         static void Main(string[] args)
         {
             DirectoryHierachyManager m = new DirectoryHierachyManager(@"D:\[temp\dir");
-            m.build();
-            m.analyze();
-            //DirectoryHierachyManager e = new DirectoryHierachyManager(@"D:\[temp", 10, DirectoryHierachyManager.ErgodicMethod.Wide);
-            //e.build();
+            m.loadXml();
+            //m.build();
+            //m.analyze();
+            //m.display_actions();
+
+            //m.writeXml();
             Console.ReadKey();
         }
     }
