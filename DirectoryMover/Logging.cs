@@ -49,8 +49,8 @@ namespace LoggingNS
                 Console.Write(s);
             }
             Console.WriteLine();
-            Console.ReadKey();
-            Environment.Exit(-1);
+            //Console.ReadKey();
+            //Environment.Exit(-1);
         }
 
         static private void OutputTime()

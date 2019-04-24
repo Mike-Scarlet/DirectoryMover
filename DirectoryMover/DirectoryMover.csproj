@@ -63,13 +63,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Structure\ActionsDef.cs" />
+    <Compile Include="ActionsManager.cs" />
+    <Compile Include="Structure\DirectoryHierarchy.cs" />
     <Compile Include="DirectoryHierachyManager.cs" />
-    <Compile Include="HierachyStructure.cs" />
+    <Compile Include="Structure\DirectoryNode.cs" />
+    <Compile Include="Structure\GlobalVar.cs" />
+    <Compile Include="Structure\HierachyNode.cs" />
+    <Compile Include="HierarchyAnalyzer.cs" />
     <Compile Include="Logging.cs" />
-    <Compile Include="PriorityQueue.cs" />
+    <Compile Include="Structure\PriorityQueue.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SystemFunction.cs" />
+    <Compile Include="Utils\RandomString.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

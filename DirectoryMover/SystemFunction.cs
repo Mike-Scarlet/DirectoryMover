@@ -36,6 +36,7 @@ namespace DirectoryMover
         {
             LPSHFOLDERCUSTOMSETTINGS FolderSettings = new LPSHFOLDERCUSTOMSETTINGS();
             FolderSettings.dwMask = 0x10;
+
             FolderSettings.pszIconFile = @"C:\windows\system32\SHELL32.dll";
             FolderSettings.iIconIndex = 0x40;
 

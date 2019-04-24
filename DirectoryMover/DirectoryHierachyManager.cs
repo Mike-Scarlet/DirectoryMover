@@ -8,15 +8,10 @@ using LoggingNS;
 using static DirectoryMover.SystemFunction;
 using System.Xml;
 using System.Collections;
+using HierarchyArchitecture;
 
-namespace DirectoryHierachy
+namespace DirectoryMover
 {
-    static class GlobalVar
-    {
-        static readonly string[] whitelist = { ".png", ".jpg", ".jpeg", ".gif", ".zip" };
-        public static HashSet<string> AcceptedExtensions = new HashSet<string>(whitelist);
-    }
-
     public class DirectoryHierachyManager
     {
         public enum ErgodicMethod
@@ -142,10 +137,10 @@ namespace DirectoryHierachy
             if (node.level >= maxLevel)
             {
                 Logging.warning("Exceed max levels");
-                Logging.info(node.dirname);
+                Logging.info(node.originDirName);
                 return;
             }
-            foreach (string s in Directory.GetDirectories(node.dirname))
+            foreach (string s in Directory.GetDirectories(node.originDirName))
             {
                 DirectoryNode tmp = new DirectoryNode(s, node);
                 node.AddChild(tmp);
@@ -165,12 +160,12 @@ namespace DirectoryHierachy
                 {
                     Logging.warning("Exceed max levels");
                     foreach (DirectoryNode n in ltmp)
-                        Logging.info(n.dirname);
+                        Logging.info(n.originDirName);
                     return;
                 }
                 foreach (DirectoryNode n in ltmp)
                 {
-                    foreach (string s in Directory.GetDirectories(n.dirname))
+                    foreach (string s in Directory.GetDirectories(n.originDirName))
                     {
                         DirectoryNode tmp = new DirectoryNode(s, n);
                         n.AddChild(tmp);
@@ -237,9 +232,9 @@ namespace DirectoryHierachy
             {
                 if (moving_down)
                 {
-                    if (iterater.childcount != 0)
+                    if (iterater.childCount != 0)
                     {
-                        for (int i = 1; i < iterater.childcount; i++)
+                        for (int i = 1; i < iterater.childCount; i++)
                         {
                             s.Push((DirectoryNode)iterater.children[i]);
                         }
@@ -261,45 +256,45 @@ namespace DirectoryHierachy
                     if (iterater.level < current_level)
                     {
                         /* do something */
-                        if (iterater.dirname != delDir)
+                        if (iterater.originDirName != delDir)
                         {
-                            foreach (string f in Directory.GetFiles(iterater.dirname))
+                            foreach (string f in Directory.GetFiles(iterater.originDirName))
                             {
                                 if (!GlobalVar.AcceptedExtensions.Contains(Path.GetExtension(f).ToLower()))
                                 {
-                                    actions.Enqueue(new MappedAction(Actions.DeleteFile, f, System.Guid.NewGuid().ToString("N"), actions.Count));
-                                    iterater.filecount--;
+                                    actions.Enqueue(new MappedAction(Actions.DeleteFile, f, System.Guid.NewGuid().ToString("N") + Path.GetExtension(f), actions.Count));
+                                    iterater.fileCount--;
                                 }
                             }
-                            if (iterater.childcount == 0 && iterater.filecount == 0)
+                            if (iterater.childCount == 0 && iterater.fileCount == 0)
                             {
-                                actions.Enqueue(new MappedAction(Actions.DeleteDir, iterater.dirname, actions.Count));
+                                actions.Enqueue(new MappedAction(Actions.DeleteDir, iterater.originDirName, actions.Count));
                                 iterater.parent.RemoveChild(iterater);
                             }
-                            else if (iterater.childcount == 1 && iterater.filecount == 0)
+                            else if (iterater.childCount == 1 && iterater.fileCount == 0)
                             {
-                                var processstr = ((DirectoryNode)iterater.children[0]).dirname;
+                                var processstr = ((DirectoryNode)iterater.children[0]).originDirName;
                                 var dirlastpath = processstr.Split('\\').Last();
-                                var parentpath = (Directory.GetParent(iterater.dirname)).ToString();
+                                var parentpath = (Directory.GetParent(iterater.originDirName)).ToString();
                                 var targetpath = parentpath + "\\" + dirlastpath;
-                                if (iterater.dirname != targetpath)
+                                if (iterater.originDirName != targetpath)
                                 {
                                     actions.Enqueue(new MappedAction(Actions.Move, processstr, targetpath, actions.Count));
-                                    actions.Enqueue(new MappedAction(Actions.DeleteDir, iterater.dirname, actions.Count));
+                                    actions.Enqueue(new MappedAction(Actions.DeleteDir, iterater.originDirName, actions.Count));
                                 }
                                 else
                                 {
                                     actions.Enqueue(new MappedAction(Actions.Move, processstr, targetpath + "_tmp", actions.Count));
-                                    actions.Enqueue(new MappedAction(Actions.DeleteDir, iterater.dirname, actions.Count));
+                                    actions.Enqueue(new MappedAction(Actions.DeleteDir, iterater.originDirName, actions.Count));
                                     actions.Enqueue(new MappedAction(Actions.Rename, targetpath + "_tmp", targetpath, actions.Count));
                                 }
                                 iterater.children[0].parent = iterater.parent;
-                                ((DirectoryNode)iterater.children[0]).dirname = targetpath;
+                                ((DirectoryNode)iterater.children[0]).originDirName = targetpath;
                                 parentpath = parentpath + "\\" + dirlastpath;
                                 foreach (DirectoryNode c_child in iterater.children[0].children)
                                 {
-                                    processstr = c_child.dirname;
-                                    c_child.dirname = parentpath + "\\" + processstr.Split('\\').Last();
+                                    processstr = c_child.originDirName;
+                                    c_child.originDirName = parentpath + "\\" + processstr.Split('\\').Last();
                                 }
                                 iterater.parent.AddChild(iterater.children[0]);
                                 iterater.parent.RemoveChild(iterater);
@@ -326,32 +321,33 @@ namespace DirectoryHierachy
                 List<DirectoryNode> a = new List<DirectoryNode>();
                 foreach (DirectoryNode n in dn.children)
                 {
-                    var lastpath = n.dirname.Split('\\').Last();
-                    var targetpath = root.dirname + "\\" + lastpath;
-                    if (dn.dirname != targetpath)
-                        actions.Enqueue(new MappedAction(Actions.Move, n.dirname, root.dirname + '\\' + lastpath, actions.Count));
+                    var lastpath = n.originDirName.Split('\\').Last();
+                    var targetpath = root.originDirName + "\\" + lastpath;
+                    if (dn.originDirName != targetpath)
+                        actions.Enqueue(new MappedAction(Actions.Move, n.originDirName, root.originDirName + '\\' + lastpath, actions.Count));
                     else
-                        actions.Enqueue(new MappedAction(Actions.Move, n.dirname, root.dirname + '\\' + lastpath + "_GUID-" + System.Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper(), actions.Count));
+                        actions.Enqueue(new MappedAction(Actions.Move, n.originDirName, root.originDirName + '\\' + lastpath + "_GUID-" + System.Guid.NewGuid().ToString("N").Substring(0, 4).ToUpper(), actions.Count));
                     a.Add(n);
                 }
                 foreach (DirectoryNode b in a)
                     dn.RemoveChild(b);
-                if (dn.childcount == 0 && dn.filecount == 0)
+                if (dn.childCount == 0 && dn.fileCount == 0)
                 {
-                    actions.Enqueue(new MappedAction(Actions.DeleteDir, dn.dirname, actions.Count));
+                    actions.Enqueue(new MappedAction(Actions.DeleteDir, dn.originDirName, actions.Count));
                 }
             }
         }
         #endregion
 
         #region Actor
-        public void display_actions()
+        void display_actions()
         {
             foreach (var action in actions)
             {
                 Logging.info(action.ToString());
             }
         }
+
         void process()
         {
             foreach (var action in actions)
@@ -359,9 +355,21 @@ namespace DirectoryHierachy
                 switch (action.act)
                 {
                     case Actions.DeleteDir:
+                        // disable read-only attribute
+                        if ((File.GetAttributes(action.src) & FileAttributes.ReadOnly) != 0)
+                        {
+                            Logging.warning(string.Format("Find read-only directory \"{0}\" removing...", action.src));
+                            File.SetAttributes(action.src, File.GetAttributes(action.src) ^ FileAttributes.ReadOnly);
+                        }
                         Directory.Delete(action.src);
                         break;
                     case Actions.DeleteFile:
+                        // del system hidden files
+                        if (File.GetAttributes(action.src) == (FileAttributes.Archive | FileAttributes.System | FileAttributes.Hidden))
+                        {
+                            Logging.warning(string.Format("Processing system file \"{0}\"", action.src));
+                            File.SetAttributes(action.src, FileAttributes.Archive);
+                        }
                         File.Move(action.src, Path.Combine(delDir, action.dst));
                         break;
                     case Actions.Move:
@@ -375,8 +383,12 @@ namespace DirectoryHierachy
 
         void recover()
         {
-            foreach (var action in actions)
+            int i;
+            var tmplist = actions.ToList();
+            //foreach (var action in actions)
+            for (i = actions.Count - 1; i >= 0; i--)
             {
+                var action = tmplist[i];
                 switch (action.act)
                 {
                     case Actions.DeleteDir:
@@ -387,8 +399,72 @@ namespace DirectoryHierachy
                         break;
                     case Actions.Move:
                     case Actions.Rename:
-                        Directory.Move(rootDir + action.src, rootDir + action.dst);
+                        Directory.Move(rootDir + action.dst, rootDir + action.src);
                         break;
+                }
+            }
+            File.Delete(delDir + "\\backup.db");
+            try
+            {
+                if (File.Exists(Path.Combine(delDir, "desktop.ini")))
+                {
+                    Logging.info("deleting desktop.ini");
+                    File.SetAttributes(Path.Combine(delDir, "desktop.ini"), FileAttributes.Archive);
+                    File.Delete(Path.Combine(delDir, "desktop.ini"));
+                }
+                File.SetAttributes(delDir, FileAttributes.Directory);
+                Directory.Delete(delDir);
+            }
+            catch (IOException)
+            {
+                Logging.warning("Fail to delete \"" + delDir + "\" please delete on your own");
+                ChangeFolderIcon(delDir);
+            }
+        }
+
+        public void run()
+        {
+            if (File.Exists(delDir + "\\backup.db"))
+            {
+                Logging.info("Find recovery file in \"" + delDir + "\"");
+                Logging.info("do you want to run recover procedure?(y/n)");
+                if (Console.ReadKey().Key == ConsoleKey.Y)
+                {
+                    Console.Write('\b');
+                    Logging.info("Starting recovery");
+                    loadXml();
+                    Logging.info(string.Format("Found {0} actions to do", actions.Count));
+                    recover();
+                    Logging.info("Finish recovery");
+                }
+                else
+                {
+                    Console.Write('\b');
+                    Logging.info("Shutting Down");
+                    System.Threading.Thread.Sleep(1000);
+                }
+            }
+            else
+            {
+                Logging.info("building structure for \"" + rootDir + "\"");
+                build();
+                analyze();
+                Logging.info(string.Format("Found {0} actions to do", actions.Count));
+                Logging.info("do you want to run packing procedure?(y/n)");
+                if (Console.ReadKey().Key == ConsoleKey.Y)
+                {
+                    Console.Write('\b');
+                    Directory.CreateDirectory(delDir);
+                    Logging.info("Start packing");
+                    writeXml();
+                    process();
+                    Logging.info("Finish packing");
+                }
+                else
+                {
+                    Console.Write('\b');
+                    Logging.info("Shutting Down");
+                    System.Threading.Thread.Sleep(1000);
                 }
             }
         }
@@ -435,13 +511,12 @@ namespace DirectoryHierachy
             return xd;
         }
 
-        public void writeXml()
+        void writeXml()
         {
-            Directory.CreateDirectory(delDir);
             getXml().Save(delDir + "\\backup.db");
         }
 
-        public void loadXml()
+        void loadXml()
         {
             XmlDocument xd = new XmlDocument();
             xd.Load(delDir + "\\backup.db");
